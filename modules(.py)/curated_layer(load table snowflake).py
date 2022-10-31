@@ -60,9 +60,9 @@ def main():
     snowflake_schema = "PUBLIC"
     source_table_name = "AGENTS"
     snowflake_options = {
-    "sfUrl":"xn65019.ap-south-1.aws.snowflakecomputing.com",
-    "sfUser": "ABHISHEK",
-    "sfPassword": "Abhi@123",
+    "sfUrl":"******.snowflakecomputing.com",
+    "sfUser": "********",
+    "sfPassword": "********",
     "sfDatabase": "ABHI_DB",
     "sfSchema": "PUBLIC",
     "sfWarehouse": "COMPUTE_WH"
