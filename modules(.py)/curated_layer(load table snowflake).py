@@ -4,11 +4,16 @@ from pyspark.sql.functions import *
 spark = SparkSession.builder.master('local').appName('curated_layer').getOrCreate()
 cleansed_df = spark.read.format('csv').load("s3a://s3-sink-abhi//clensed//part-00000*.csv")
 cleansed_df.show()
+cleansed.na.fill("NA").show(truncate=False)
 
 
 ######### CURATED LAYER **********#@*******************
 curated=cleansed_df.drop('referer')
+curated = curated.withColumn("day",to_date("datetime_confirmed"))\
+    .withColumn("hour",hour("datetime_confirmed"))\
+    .withColumn("day_hour",concat(col("day"), lit(" "),col("hour")))
 curated.show(truncate=False)
+# curated.show(truncate=False)
 # curated.write.mode('overwrite').save('s3a://mybucket-untouch//curated')
 
 
@@ -25,7 +30,8 @@ device_agg= device_curated.withColumn("GET",when(col("method_GET")=="GET","GET")
                             .withColumn('hour', hour(col('datetime_confirmed')))
 device_agg.show(50,truncate=False)
 
-per_de=device_agg.groupBy("clientip").agg(count('GET').alias("GET"),count('POST').alias("POST")
+per_de=device_agg\
+    .groupBy("day_hour","clientip").agg(count("id").alias("row_id"),count('GET').alias("GET"),count('POST').alias("POST")
                                  ,count('HEAD').alias("HEAD"),first("hour").alias('hour')
                                  ,count('clientip').alias('no_of_client'))
 per_de.show(400)
@@ -34,12 +40,11 @@ per_de.repartition(1).write.mode("overwrite").format("csv").option("header","Tru
 # per_de.write.mode("overwrite").format("csv").option("header","True").save("C://Users//abhishek.dd//Desktop//Anmol//git//per")
 # per_de.write.mode('overwrite').save('s3a://s3-sink-abhi//per_device')
 
-across_de=device_agg.agg(count('GET').alias("no_get"),count('POST').alias("no_post")\
-                         ,count('HEAD').alias("no_head"),first("hour").alias('day_hour'),count('clientip').alias("no_of_clinets"))\
-                        .withColumn('row_id',monotonically_increasing_id())
+
+across_de=device_agg.groupBy("day_hour").agg(count('GET').alias("no_get"),count('POST').alias("no_post")\
+                         ,count('HEAD').alias("no_head"),count('clientip').alias("no_of_clients"))
 across_de.show()
-across_de.repartition(1)
-across_de.write.mode("overwrite").format("csv").option("header","True").save("C://Users//abhishek.dd//Desktop//Anmol//git//across")
+across_de.repartition(1).write.mode("overwrite").format("csv").option("header","True").save("C://Users//abhishek.dd//Desktop//Anmol//git//across")
 # across_de.write.mode('overwrite').save('s3a://s3-sink-abhi//across_device')
 
 
