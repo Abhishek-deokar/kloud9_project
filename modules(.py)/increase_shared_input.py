@@ -1,4 +1,4 @@
-om pathlib import Path
+from pathlib import Path
 from secrets import randbelow
 import random
 l=Path('C:\\Users\\abhishek.dd\\Desktop\\Anmol\\Anmol_arrived\\log_data_ip_request.txt')
