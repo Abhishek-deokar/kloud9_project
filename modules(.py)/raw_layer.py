@@ -2,7 +2,7 @@ from pyspark.sql import *
 from pyspark.sql.functions import *
 
 spark = SparkSession.builder.master('local').appName('raw_layer').getOrCreate()
-data = ("C:\\Users\\abhishek.dd\\Desktop\\Anmol\\Anmol_arrived\\100.txt")
+data = ("C:\\Users\\abhishek.dd\\Desktop\\Anmol\\Anmol_arrived\\new_log.txt")
 df = spark.read.format('text').load(data)
 # df = spark.read.format("text").load("s3://sinking-data/sinking-data/msk-topics-latest/0/299999.text")
 df.show(truncate=False)
@@ -29,6 +29,14 @@ raw_df = df.withColumn("id", monotonically_increasing_id()) \
             , regexp_extract('value', ree, 1).alias('referer')
             , regexp_extract('value', usery, 0).alias('user_agent'))
 raw_df.show(truncate=False)
+print(raw_df.count())
+raw_df = raw_df.dropDuplicates(["clientip","datetime_confirmed","method_GET"])\
+        .drop("id")
+raw_df.show()
+raw_df = raw_df.withColumn("id", monotonically_increasing_id())
+raw_df = raw_df.select("id","clientip","datetime_confirmed","method_GET","request","status_code","size","referer","user_agent")
+raw_df.show()
+print(raw_df.count())
 # raw_df.count()
 # raw_df.write.format('csv').mode('overwrite').save('s3a://s3-sink-abhi//raw_log_details.csv')
 # raw_df.write.mode("overwrite").saveAsTable("raw_df")
